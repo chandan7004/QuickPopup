@@ -114,3 +114,7 @@ Packaging for the Web Store (excludes dev files):
 ```bash
 zip -r ../QuickPopup.zip . -x 'store/*' 'make_icons.py' 'README.md' '.git*' '*.DS_Store'
 ```
+
+## License
+
+[MIT](LICENSE)
