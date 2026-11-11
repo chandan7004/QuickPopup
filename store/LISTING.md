@@ -45,5 +45,5 @@ Open URLs and searches in popup windows and switch between those popups and the 
 ## Packaging
 Zip only the extension files (exclude `store/`, `make_icons.py`, `.git*`):
 ```bash
-cd ~/QuickPopup && zip -r ../QuickPopup-$(python3 -c "import json;print(json.load(open('manifest.json'))['version'])").zip . -x 'store/*' 'make_icons.py' '.git*' '*.DS_Store'
+cd ~/QuickPopup && zip -r ../QuickPopup-$(python3 -c "import json;print(json.load(open('manifest.json'))['version'])").zip . -x 'store/*' 'make_icons.py' 'README.md' '.git*' '*.DS_Store'
 ```
