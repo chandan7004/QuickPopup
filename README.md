@@ -29,12 +29,28 @@ Requires Chrome 127 or newer.
 
 ## How it works
 
+![Press ⌘⇧K and type, it opens in a popup, press ⌘⇧K again to return](docs/images/how-it-works.png)
+
 1. Press `⌘⇧K`, type `so genserver timeout`, press `↵`. It opens in a popup window.
 2. Press `⌘⇧K` again to go back to your tab. The popup stays open.
 3. Press it again and the popup comes forward. With 2+ popups you get a switcher.
 4. `⌘W` closes the popup and returns you to your tab.
 
 Popups are normal Chrome windows, so they don't stay on top. The shortcut brings them straight back.
+
+## What it's good for
+
+**Look things up without leaving your tab.** Check a doc, a PR or an error mid-task. Your tab never moves.
+
+![Search box with a GitHub search preview and a docs popup](store/assets/screenshot-2-search-1280x800.png)
+
+**Nothing gets lost.** Closed popups, and pages a new search replaced, wait in "Recently closed". Pin a popup to keep it.
+
+![Switcher showing open popups, a pinned popup, recent searches and recently closed pages](docs/images/lose-nothing.png)
+
+**Pop any tab out, and back.** Keep a page next to your work for a while, then put it back. It keeps its place.
+
+![A tab moved into a popup window with Alt+Shift+P](docs/images/pop-out.png)
 
 ## Shortcuts
 
@@ -106,13 +122,14 @@ Plain JavaScript, no build step, no dependencies.
 | `theme.css` | Shared colours for settings and welcome pages |
 | `make_icons.py` | Regenerates `icons/` with plain Python: `python3 make_icons.py icons` |
 | `store/` | Web Store listing text, privacy policy, screenshots (not part of the extension package) |
+| `docs/images/` | README images |
 
 After editing, click ↻ reload on the extension card in `chrome://extensions/`. Shortcut or permission changes need a remove + **Load unpacked**.
 
 Packaging for the Web Store (excludes dev files):
 
 ```bash
-zip -r ../QuickPopup.zip . -x 'store/*' 'make_icons.py' 'README.md' '.git*' '*.DS_Store'
+zip -r ../QuickPopup.zip . -x 'store/*' 'docs/*' 'make_icons.py' 'README.md' 'LICENSE' '.git*' '*.DS_Store'
 ```
 
 ## License
