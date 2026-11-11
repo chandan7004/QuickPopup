@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    /* palette matched to Chrome's brown/peach profile theme */
+    :root {
+      --bg: #fbf5ef; --fg: #2b1d12; --muted: #8a7364; --line: #ecdccd;
+      --hover: #f5e8dc; --active: #f6d6ba; --accent: #8a4b1a;
+      --pill: #6b3a14; --pill-fg: #fde3cc; --kbd: #efdfd0; --target: #b56a2c;
+      --field: #f3e6da; --tile: #f0e1d3; --ring: rgba(138, 75, 26, .22);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #2a211b; --fg: #f3e7dc; --muted: #b19d8e; --line: #3e3128;
+        --hover: #382b22; --active: #5a3519; --accent: #f4b98a;
+        --pill: #f4b98a; --pill-fg: #3a2414; --kbd: #43342a; --target: #f4b98a;
+        --field: #33281f; --tile: #3b2e25; --ring: rgba(244, 185, 138, .22);
+      }
+    }
+    * { box-sizing: border-box; }
+    body { width: 420px; margin: 0; padding: 10px; background: var(--bg); color: var(--fg); font: 13px/1.35 -apple-system, BlinkMacSystemFont, sans-serif; }
+    .search { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--field); border: 1px solid transparent; border-radius: 12px; transition: border-color .15s, box-shadow .15s; }
+    .search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--ring); }
+    .search svg { flex: none; color: var(--muted); }
+    input { caret-color: var(--accent); flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--fg); font-size: 15px; }
+    input::placeholder { color: var(--muted); }
+    .esc { font-size: 10.5px; color: var(--muted); background: var(--kbd); border-radius: 6px; padding: 2px 6px; }
+    #preview { padding: 8px 6px 0; font-size: 12px; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #preview:empty { display: none; }
+    ul { list-style: none; margin: 0; padding: 2px 0 4px; max-height: 440px; overflow-y: auto; }
+    li.section { padding: 12px 10px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    li.section + li.item { margin-top: 0; }
+    li.divider { border-top: 1px solid var(--line); margin: 8px 10px 0; }
+    li.item { display: flex; align-items: center; gap: 12px; padding: 7px 10px; border-radius: 12px; cursor: pointer; transition: background .1s; }
+    li.item:hover { background: var(--hover); }
+    li.item.active { background: var(--active); }
+    .icon { flex: none; width: 28px; height: 28px; display: grid; place-items: center; color: var(--muted); background: var(--tile); border-radius: 8px; }
+    li.item.active .icon { background: rgba(255, 255, 255, .12); }
+    .icon img { width: 16px; height: 16px; border-radius: 4px; }
+    .text { flex: 1; min-width: 0; }
+    .title, .sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .title { font-size: 13.5px; }
+    .sub { font-size: 11.5px; color: var(--muted); }
+    .right { flex: none; display: flex; align-items: center; gap: 6px; }
+    .pill { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: var(--pill); color: var(--pill-fg); }
+    .pill.target { display: none; background: transparent; color: var(--target); border: 1px solid var(--target); font-weight: 500; }
+    body.show-target .pill.target { display: inline; }
+    .action { font-size: 11px; color: var(--muted); visibility: hidden; }
+    li.item.active .action, li.item:hover .action { visibility: visible; }
+    .empty { padding: 14px 10px; color: var(--muted); font-size: 12px; }
+    .hint { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 6px; padding: 8px 12px; background: var(--field); border-radius: 12px; font-size: 11px; color: var(--muted); }
+    .hint kbd { font: inherit; background: var(--kbd); border-radius: 5px; padding: 1px 5px; color: var(--fg); }
+    .hint a { margin-left: auto; color: inherit; }
+  </style>
+</head>
+<body>
+  <div class="search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input type="text" id="q" placeholder="Search or enter a URL…" title="Tip: yt / gh / so / hex / w + query" autofocus autocomplete="off" spellcheck="false">
+    <span class="esc">esc</span>
+  </div>
+  <div id="preview"></div>
+  <ul id="list"></ul>
+  <div class="hint">
+    <span id="hintKeys" style="display: contents"></span>
+    <a href="#" id="settings">settings</a>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

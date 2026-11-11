@@ -1,0 +1,17 @@
+/* palette matched to Chrome's brown/peach profile theme (shared by options + welcome) */
+:root {
+  --bg: #fbf5ef; --card: #ffffff; --fg: #2b1d12; --muted: #8a7364; --line: #ecdccd;
+  --accent: #8a4b1a; --accent-bg: #f6d6ba; --kbd: #efdfd0; --warn: #b42318;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1f1813; --card: #2a211b; --fg: #f3e7dc; --muted: #b19d8e; --line: #3e3128;
+    --accent: #f4b98a; --accent-bg: #5a3519; --kbd: #43342a; --warn: #ff8a7a;
+  }
+}
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; }
+a { color: var(--accent); }
+kbd { font: 12px/1 -apple-system, sans-serif; background: var(--kbd); border-radius: 4px; padding: 3px 6px; white-space: nowrap; }
+button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+select, input[type=number] { font: inherit; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--fg); }

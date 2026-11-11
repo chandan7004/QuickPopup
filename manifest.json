@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "Quick Popup Search",
+  "version": "1.6",
+  "description": "Open anything. Lose nothing. Return instantly.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "alarms",
+    "favicon",
+    "system.display"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Quick Popup Search",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "commands": {
+    "smart-toggle": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+K",
+        "mac": "Command+Shift+K"
+      },
+      "description": "Search / switch: bring popup forward, show switcher when 2+, or go back"
+    },
+    "toggle-popout": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      },
+      "description": "Pop current tab out into a popup / move popup back into a tab"
+    },
+    "toggle-pin": {
+      "suggested_key": {
+        "default": "Alt+Shift+L"
+      },
+      "description": "Pin / unpin the focused popup"
+    },
+    "reopen-closed": {
+      "suggested_key": {
+        "default": "Alt+Shift+T"
+      },
+      "description": "Reopen the last closed popup"
+    },
+    "open-search": {
+      "description": "Always open the search box (even when a popup exists)"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  }
+}
