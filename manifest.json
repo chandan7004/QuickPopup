@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Quick Popup Search",
-  "version": "1.6",
-  "description": "Open anything. Lose nothing. Return instantly.",
+  "version": "1.7",
+  "description": "Open searches and links in popup windows and jump back to your tab instantly.",
+  "minimum_chrome_version": "127",
+  "incognito": "not_allowed",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -13,11 +15,14 @@
     "storage",
     "tabs",
     "alarms",
-    "favicon",
-    "system.display"
+    "favicon"
   ],
   "background": {
     "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
   },
   "action": {
     "default_popup": "popup.html",
@@ -48,17 +53,10 @@
       "description": "Pin / unpin the focused popup"
     },
     "reopen-closed": {
-      "suggested_key": {
-        "default": "Alt+Shift+T"
-      },
-      "description": "Reopen the last closed popup"
+      "description": "Reopen the last closed popup (optional)"
     },
     "open-search": {
       "description": "Always open the search box (even when a popup exists)"
     }
-  },
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": false
   }
 }

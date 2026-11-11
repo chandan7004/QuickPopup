@@ -8,7 +8,7 @@
 //     lastNormal: { windowId, tabId }   last active tab in a normal window (fallback "original")
 //     prevFocus:  { windowId, normal }  last focused real window
 //   chrome.storage.local (persistent):
-//     recent, closed, bounds, settings { cleanupMinutes, enterMode: 'reuse' | 'new' }
+//     recent, closed, bounds, settings { cleanupMinutes, enterMode: 'new' (default) | 'reuse' }
 
 const DEFAULT_W = 650, DEFAULT_H = 750, MAX_CLOSED = 15;
 
@@ -52,7 +52,7 @@ async function updateBadge(popups) {
 
 async function getSettings() {
   const { settings = {} } = await chrome.storage.local.get('settings');
-  return { cleanupMinutes: 0, enterMode: 'reuse', ...settings };
+  return { cleanupMinutes: 0, enterMode: 'new', ...settings };
 }
 
 async function pushClosed(item) {
@@ -129,51 +129,53 @@ async function setOrigin(id, origin, extra = {}) {
   });
 }
 
-// Keep saved bounds on a connected screen: at least 120x80 px visible and the title bar on-screen.
-async function fitToScreen(b) {
-  if (b.left == null) return b;
+async function centeredOver(originWindowId) {
   try {
-    const displays = await chrome.system.display.getInfo();
-    for (const { workArea: a } of displays) {
-      const ox = Math.min(b.left + b.width, a.left + a.width) - Math.max(b.left, a.left);
-      const oy = Math.min(b.top + b.height, a.top + a.height) - Math.max(b.top, a.top);
-      const titleBarVisible = b.top >= a.top && b.top < a.top + a.height - 40;
-      if (ox >= 120 && oy >= 80 && titleBarVisible) {
-        return { ...b, width: Math.min(b.width, a.width), height: Math.min(b.height, a.height) };
-      }
-    }
-    return null; // off every screen
-  } catch {
-    return b; // display info unavailable: trust Chrome
-  }
+    const w = await chrome.windows.get(originWindowId);
+    return {
+      width: DEFAULT_W, height: DEFAULT_H,
+      left: w.left + Math.round((w.width - DEFAULT_W) / 2),
+      top: w.top + Math.round((w.height - DEFAULT_H) / 2),
+    };
+  } catch { return null; }
 }
 
-async function popupBounds(originWindowId, offsetIndex) {
+// Bounds to try, in order: saved position, centred over the origin window, default size, Chrome's
+// choice. Extra popups cascade (max 5 steps). Coordinates may be negative (screens left of / above
+// the primary one), so nothing is clamped to 0. Chrome itself rejects bounds that are less than 50%
+// on a connected screen (e.g. after unplugging a monitor), and createPopup then tries the next one.
+// (chrome.system.display isn't available in the service worker, so we let Chrome be the judge.)
+async function popupBoundsCandidates(originWindowId, offsetIndex) {
   const { bounds: saved } = await chrome.storage.local.get('bounds');
-  let bounds = saved ? await fitToScreen(saved) : null;
-  if (!bounds) {
-    bounds = { width: DEFAULT_W, height: DEFAULT_H };
-    try {
-      const w = await chrome.windows.get(originWindowId);
-      bounds.left = w.left + Math.round((w.width - DEFAULT_W) / 2);
-      bounds.top = w.top + Math.round((w.height - DEFAULT_H) / 2);
-    } catch { /* let Chrome place it */ }
-  }
-  const out = { width: bounds.width, height: bounds.height };
-  if (bounds.left != null) {
-    const off = 30 * offsetIndex; // cascade extra popups
-    out.left = Math.max(0, bounds.left + off);
-    out.top = Math.max(0, bounds.top + off);
-  }
-  return out;
+  const off = 30 * Math.min(offsetIndex, 5);
+  const shift = (b) => ({ ...b, left: b.left + off, top: b.top + off });
+  const list = [];
+  if (saved) list.push(shift(saved));
+  const centred = await centeredOver(originWindowId);
+  if (centred) list.push(shift(centred));
+  list.push({ width: DEFAULT_W, height: DEFAULT_H }, {});
+  return list;
+}
+
+function isBoundsError(err) {
+  return /bounds/i.test(String(err && err.message));
 }
 
 async function createPopup({ url, tabId, origin }) {
   const n = (await livePopupIds()).length;
-  const opts = { type: 'popup', focused: true, ...(await popupBounds(origin?.windowId, n)) };
-  if (tabId != null) opts.tabId = tabId; else opts.url = url;
+  const base = { type: 'popup', focused: true };
+  if (tabId != null) base.tabId = tabId; else base.url = url;
   if (origin) await chrome.storage.session.set({ lastNormal: { windowId: origin.windowId, tabId: origin.tabId ?? null } });
-  const win = await chrome.windows.create(opts);
+  let win = null;
+  for (const bounds of await popupBoundsCandidates(origin?.windowId, n)) {
+    try {
+      win = await chrome.windows.create({ ...base, ...bounds });
+      break;
+    } catch (err) {
+      if (!isBoundsError(err)) throw err; // only off-screen bounds are worth retrying
+    }
+  }
+  if (!win) throw new Error('Could not open a popup window');
   const tab = win.tabs && win.tabs[0];
   await withPopups(p => {
     p[win.id] = {
@@ -217,22 +219,39 @@ async function focusPopup(id, origin) {
   await chrome.windows.update(id, { focused: true });
 }
 
+// Popup -> normal tab. tabs.move keeps the live page (scroll, form input, video); verified on
+// Chrome 157. Older docs said only normal<->normal moves are allowed, so if Chrome refuses, the
+// page is reopened in a tab instead (it reloads).
 async function promote(win, tab) {
-  const entry = await withPopups(p => { const e = p[win.id]; if (e) e.promoted = true; return e; });
+  const entry = (await getPopups())[win.id];
   const target = (await resolveOrigin(entry || {}))?.windowId ?? null;
-  if (target == null) {
-    await chrome.windows.create({ tabId: tab.id, type: 'normal' });
-    return;
-  }
+  const url = tab.url || tab.pendingUrl;
+  const setPromoted = (v) => withPopups(p => { if (p[win.id]) p[win.id].promoted = v; });
+  // Mark first: closing the popup is part of this move, so it must not land in "Recently closed"
+  // or yank focus back to the origin. Cleared again if anything fails.
+  await setPromoted(true);
   try {
-    await chrome.tabs.move(tab.id, { windowId: target, index: -1 }); // keeps page state
-    await chrome.tabs.update(tab.id, { active: true });
-  } catch {
-    // Chrome may refuse to move tabs out of popup windows: reopen the URL instead
-    await chrome.tabs.create({ windowId: target, url: tab.url || tab.pendingUrl, active: true });
-    await chrome.windows.remove(win.id).catch(() => {});
+    if (target == null) {
+      try {
+        await chrome.windows.create({ tabId: tab.id, type: 'normal', focused: true });
+      } catch {
+        await chrome.windows.create({ url, type: 'normal', focused: true });
+        await chrome.windows.remove(win.id).catch(() => setPromoted(false));
+      }
+      return;
+    }
+    try {
+      await chrome.tabs.move(tab.id, { windowId: target, index: -1 });
+      await chrome.tabs.update(tab.id, { active: true });
+    } catch {
+      await chrome.tabs.create({ windowId: target, url, active: true });
+      await chrome.windows.remove(win.id).catch(() => setPromoted(false));
+    }
+    await chrome.windows.update(target, { focused: true });
+  } catch (err) {
+    await setPromoted(false); // nothing moved: the popup stays a normal tracked popup
+    throw err;
   }
-  await chrome.windows.update(target, { focused: true });
 }
 
 async function focusedWindow() {
@@ -266,14 +285,17 @@ async function reopenClosed(index = 0, mode = 'new', origin = null) {
 }
 
 async function openSearchBox(win) {
-  try {
-    await chrome.action.openPopup({ windowId: win.id });
-  } catch {
-    // Older Chrome: show the search box in its own small window instead
-    const tab = win.tabs.find(t => t.active);
-    const q = new URLSearchParams({ w: win.id, t: tab ? tab.id : '' });
-    await chrome.windows.create({ url: `popup.html?${q}`, type: 'popup', width: 420, height: 480, focused: true });
+  // Popup-type windows have no toolbar (this also stops the fallback window from stacking).
+  if (!win || win.type !== 'normal') return;
+  if (typeof chrome.action.openPopup === 'function') {
+    // Chrome 127+ (minimum_chrome_version). Rejects e.g. when the search box is already showing.
+    await chrome.action.openPopup({ windowId: win.id }).catch(() => {});
+    return;
   }
+  // Safety net only: show the search box in its own small window
+  const tab = win.tabs.find(t => t.active);
+  const q = new URLSearchParams({ w: win.id, t: tab ? tab.id : '' });
+  await chrome.windows.create({ url: `popup.html?${q}`, type: 'popup', width: 420, height: 480, focused: true });
 }
 
 // Cmd+Shift+K:
@@ -383,6 +405,7 @@ chrome.tabs.onActivated.addListener(async ({ tabId, windowId }) => {
 });
 
 chrome.windows.onBoundsChanged.addListener(async (win) => {
+  if (win.state && win.state !== 'normal') return; // skip fullscreen / maximized / minimized
   if (!(await getPopups())[win.id]) return;
   await chrome.storage.local.set({ bounds: { left: win.left, top: win.top, width: win.width, height: win.height } });
 });

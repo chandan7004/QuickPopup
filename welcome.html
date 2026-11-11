@@ -17,6 +17,7 @@
     tr:first-child td { border-top: 0; }
     td:first-child { width: 170px; }
     .unset { color: var(--warn); font-weight: 600; }
+    .optional { color: var(--muted); }
     .banner { margin-top: 24px; padding: 12px 14px; border-radius: 10px; background: var(--accent-bg); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .banner[hidden] { display: none; }
     ol { margin: 0; padding: 12px 14px 12px 34px; }
@@ -46,24 +47,25 @@
     <h2>The flow</h2>
     <div class="card">
       <ol>
-        <li>Press <kbd id="kSmart">⌘⇧K</kbd>, type <kbd>so genserver timeout</kbd>, press <kbd>↵</kbd> → opens in a floating popup.</li>
+        <li>Press <kbd id="kSmart">⌘⇧K</kbd>, type <kbd>so genserver timeout</kbd>, press <kbd>↵</kbd> → opens in a popup window.</li>
         <li>Press <kbd id="kSmart2">⌘⇧K</kbd> again → back to your tab. The popup stays open.</li>
         <li>Press it again → the popup comes forward. With 2+ popups you get a switcher.</li>
         <li>Want to keep a popup safe from being replaced? Pin it.</li>
-        <li>Page deserves a real tab? Pop it back into a tab.</li>
-        <li><kbd>⌘W</kbd> closes the popup and returns you to your tab. Closed and replaced pages stay in “Recently closed”.</li>
+        <li>Page deserves a real tab? Move it into a tab. It keeps its place: scroll, forms, video.</li>
+        <li><kbd class="kClose">⌘W</kbd> closes the popup and returns you to your tab. Closed and replaced pages stay in “Recently closed”.</li>
       </ol>
     </div>
+    <p class="muted">Popups are normal Chrome windows: they don't stay on top. When one is hidden behind your tab, the shortcut brings it straight back.</p>
 
     <h2>In the search box</h2>
     <div class="card">
       <table>
-        <tr><td><kbd>↵</kbd></td><td>Open in the last popup (setting: or always a new popup). The preview line shows what gets replaced.</td></tr>
-        <tr><td><kbd>⌘↵</kbd></td><td>The other one (new popup / reuse)</td></tr>
-        <tr><td><kbd>⇧↵</kbd></td><td>Normal tab</td></tr>
+        <tr><td><kbd>↵</kbd></td><td>Open in a new popup. (Setting: replace the last popup instead. The preview line then shows what gets replaced.)</td></tr>
+        <tr><td><kbd class="kModEnter">⌘↵</kbd></td><td>The other one (replace last popup / new popup)</td></tr>
+        <tr><td><kbd class="kShiftEnter">⇧↵</kbd></td><td>Normal tab</td></tr>
         <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Pick from open popups, recent searches, recently closed</td></tr>
         <tr><td><kbd>esc</kbd></td><td>Close the search box</td></tr>
-        <tr><td><kbd>yt</kbd> <kbd>gh</kbd> <kbd>so</kbd> <kbd>hex</kbd> <kbd>w</kbd> <kbd>g</kbd></td><td>YouTube, GitHub, Stack Overflow, Hex, Wikipedia, Google + your query</td></tr>
+        <tr><td><kbd>yt</kbd> <kbd>gh</kbd> <kbd>so</kbd> <kbd>hex</kbd> <kbd>w</kbd> <kbd>g</kbd></td><td>YouTube, GitHub, Stack Overflow, Hex, Wikipedia, Google + your query. To search a phrase that starts with one of these words, prefix <kbd>g</kbd>: <kbd>g so many words</kbd>.</td></tr>
       </table>
     </div>
   </main>

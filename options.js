@@ -12,7 +12,7 @@ async function saveSetting(key, value) {
 
 chrome.storage.local.get({ settings: {} }).then(({ settings }) => {
   cleanup.value = settings.cleanupMinutes || 0;
-  enterMode.value = settings.enterMode || 'reuse';
+  enterMode.value = settings.enterMode || 'new';
 });
 
 cleanup.addEventListener('change', () => {

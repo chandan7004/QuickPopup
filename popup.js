@@ -40,8 +40,12 @@ if (typeof document === 'undefined') {
     search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   };
 
-  // Enter = settings.enterMode ('reuse' or 'new'); Cmd/Ctrl+Enter = the other one; Shift+Enter = tab
-  const baseMode = () => state.enterMode || 'reuse';
+  const IS_MAC = /Mac/i.test(navigator.userAgentData?.platform || navigator.platform || navigator.userAgent);
+  const K_MOD_ENTER = IS_MAC ? '⌘↵' : 'Ctrl+↵';
+  const K_SHIFT_ENTER = IS_MAC ? '⇧↵' : 'Shift+↵';
+
+  // Enter = settings.enterMode ('new' default, or 'reuse'); Cmd/Ctrl+Enter = the other one; Shift+Enter = tab
+  const baseMode = () => state.enterMode || 'new';
   const altMode = () => (baseMode() === 'reuse' ? 'new' : 'reuse');
   const modeFor = (e) => (e.shiftKey ? 'tab' : (e.metaKey || e.ctrlKey) ? altMode() : baseMode());
   const reuseTarget = () => state.popups.find(p => p.windowId === state.reuseTargetId);
@@ -199,8 +203,8 @@ if (typeof document === 'undefined') {
     const it = active >= 0 ? items[active] : null;
     let keys;
     if (it && it.kind === 'open') keys = [['↵', 'switch'], ['↑↓', 'pick']];
-    else if (it && it.kind === 'closed') keys = [['↵', 'restore'], ['⇧↵', 'in tab'], ['↑↓', 'pick']];
-    else if (it || typing) keys = [['↵', shortMode(baseMode())], ['⌘↵', shortMode(altMode())], ['⇧↵', 'tab']];
+    else if (it && it.kind === 'closed') keys = [['↵', 'restore'], [K_SHIFT_ENTER, 'in tab'], ['↑↓', 'pick']];
+    else if (it || typing) keys = [['↵', shortMode(baseMode())], [K_MOD_ENTER, shortMode(altMode())], [K_SHIFT_ENTER, 'tab']];
     else keys = [['↑↓', 'pick'], ['yt gh so hex w', '+ query']];
     const box = document.getElementById('hintKeys');
     box.innerHTML = '';
@@ -238,6 +242,7 @@ if (typeof document === 'undefined') {
   input.addEventListener('input', () => { active = -1; render(); });
 
   input.addEventListener('keydown', (e) => {
+    if (e.isComposing || e.keyCode === 229) return; // IME (Hindi, CJK...) still composing: not our key
     if (e.key === 'ArrowDown' && items.length) {
       e.preventDefault();
       active = active + 1 >= items.length ? -1 : active + 1;
@@ -282,7 +287,7 @@ if (typeof document === 'undefined') {
       popups: (bg && bg.popups) || [],
       closed: (bg && bg.closed) || [],
       reuseTargetId: bg ? bg.reuseTargetId : null,
-      enterMode: (bg && bg.enterMode) || 'reuse',
+      enterMode: (bg && bg.enterMode) || 'new',
     };
     // opened by Cmd+Shift+K with 2+ popups: preselect the most recent one so Enter switches to it
     if (bg && bg.preselect && state.popups.length) active = 0;
